@@ -1,0 +1,4 @@
+* text=auto
+# Force text for certain files
+*.py text
+*.json text
