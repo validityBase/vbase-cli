@@ -2,10 +2,10 @@ import click
 import logging
 
 from vbasecli.workers import add_object_worker, verify_object_worker
-from vbasecli.config import global_options
+from vbasecli.config import OperationType, global_options
 
 
-def shared_object_cid_options(f):
+def object_cid_options(f):
     """Decorator to add shared input options for commands that require an object_cid."""
 
     @click.option("--object_cid", help="Specify object CID")
@@ -27,7 +27,7 @@ def get_object_cid(object_cid, object_cid_stdin):
         object_cid_value = click.get_text_stream("stdin").read()
 
     if not object_cid_value:
-        click.echo("No valid input provided. Use --object_cid or --object_cid_stdin.")
+        click.echo("You must specify either--object_cid or --object_cid_stdin.")
         return None
 
     return object_cid_value
@@ -68,28 +68,19 @@ def cli(ctx, verbose):
     setup_logging(verbose)
 
 
-@cli.command()
-# This operation creates commitments and needs the global write config options.
-@global_options
-# Explicitly add global options to the command's signature
-# so they will appear in the --help output.
-@click.option("--vb_cs_node_rpc_url", help="vBase commitment service node RPC URL")
-@click.option("--vb_cs_address", help="vBase commitment service smart contract address")
-@click.option("--vb_cs_private_key", help="vBase commitment service private key")
-@click.option("--vb_forwarder_url", help="vBase forwarder URL")
-@click.option("--vb_api_key", help="vBase API key")
-# Apply shared options to get the object CID to commit.
-@shared_object_cid_options
-# Explicitly add shared options to the command's signature
-# so they will appear in the --help output.
-@click.option("--object_cid", help="Specify object CID")
-@click.option("--object_cid_stdin", is_flag=True, help="Read object CID from stdin")
+@click.command()
 @click.pass_context
-def add_object(ctx, file, stdin, object_cid, object_cid_stdin):
+# Apply shared options to get the object CID to commit.
+@object_cid_options
+# This operation creates commitments and needs the global write config options.
+# These options must be applied first for the wrappers to work correctly
+# and click to provide the correct command help.
+@global_options(OperationType.COMMIT)
+def add_object(ctx, object_cid, object_cid_stdin):
     """Create an object commitment"""
     logging.info("Adding object...")
 
-    object_cid_value = get_object_cid(file, stdin, object_cid, object_cid_stdin)
+    object_cid_value = get_object_cid(object_cid, object_cid_stdin)
     if object_cid_value is None:
         return
 
@@ -101,28 +92,19 @@ def add_object(ctx, file, stdin, object_cid, object_cid_stdin):
     pass
 
 
-@cli.command()
-# This operation creates commitments and needs the global write config options.
-@global_options
-# Explicitly add global options to the command's signature
-# so they will appear in the --help output.
-@click.option("--vb_cs_node_rpc_url", help="vBase commitment service node RPC URL")
-@click.option("--vb_cs_address", help="vBase commitment service smart contract address")
-@click.option("--vb_cs_private_key", help="vBase commitment service private key")
-@click.option("--vb_forwarder_url", help="vBase forwarder URL")
-@click.option("--vb_api_key", help="vBase API key")
-# Apply shared options to get the object CID to commit.
-@shared_object_cid_options
-# Explicitly add shared options to the command's signature
-# so they will appear in the --help output.
-@click.option("--object_cid", help="Specify object CID")
-@click.option("--object_cid_stdin", is_flag=True, help="Read object CID from stdin")
+@click.command()
 @click.pass_context
-def verify_object(ctx, file, stdin, object_cid, object_cid_stdin):
+# Apply shared options to get the object CID to verify.
+@object_cid_options
+# This operation creates commitments and needs the global write config options.
+# These options must be applied first for the wrappers to work correctly
+# and click to provide the correct command help.
+@global_options(OperationType.VERIFY)
+def verify_object(ctx, object_cid, object_cid_stdin):
     """Verify an object commitment"""
     logging.info("Verifying object...")
 
-    object_cid_value = get_object_cid(file, stdin, object_cid, object_cid_stdin)
+    object_cid_value = get_object_cid(object_cid, object_cid_stdin)
     if object_cid_value is None:
         return
 
@@ -132,6 +114,10 @@ def verify_object(ctx, file, stdin, object_cid, object_cid_stdin):
     # Verify object using the worker function
     # verify_object_worker(object_cid_value)
     pass
+
+
+cli.add_command(add_object)
+cli.add_command(verify_object)
 
 
 if __name__ == "__main__":
