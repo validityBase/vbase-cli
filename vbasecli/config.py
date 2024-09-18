@@ -18,7 +18,7 @@ class OperationType(Enum):
 # The configuration file is used to store persistent configuration settings.
 # These can be overridden by environment variables and command-line optios.
 CONFIG_FILE_PATH = os.path.join(
-    os.path.expanduser("~", ".config", "vbase", "config.json")
+    os.path.expanduser("~"), ".config", "vbase", "config.json"
 )
 
 
