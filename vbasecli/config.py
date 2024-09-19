@@ -1,5 +1,6 @@
 import click
 from enum import Enum
+from functools import wraps
 import json
 import os
 
@@ -56,16 +57,16 @@ def validate_commit_operation(
     vb_cs_node_rpc_url, vb_cs_address, vb_cs_private_key, vb_forwarder_url, vb_api_key
 ):
     """Validate the options for a commit (write) operation."""
-    # Direct node access: [--vb_cs_node_rpc_url, --vb_cs_address, --vb_cs_private_key]
+    # Direct node access: [--vb-cs-node-rpc-url, --vb-cs-address, --vb-cs-private-key]
     if vb_cs_node_rpc_url and vb_cs_address and vb_cs_private_key:
         return
-    # Forwarder access: [--vb_forwarder_url, --vb_api_key] with an optional --vb_cs_private_key
+    # Forwarder access: [--vb-forwarder-url, --vb-api-key] with an optional --vb-cs-private-key
     elif vb_forwarder_url and vb_api_key:
         return
     # Otherwise, invalid combination
     raise click.UsageError(
-        "For a commit (write) operation, you must specify either [--vb_cs_node_rpc_url, --vb_cs_address, --vb_cs_private_key] "
-        "or [--vb_forwarder_url, --vb_api_key] with an optional --vb_cs_private_key."
+        "For a commit (write) operation, you must specify either [--vb-cs-node-rpc-url, --vb-cs-address, --vb-cs-private-key] "
+        "or [--vb-forwarder-url, --vb-api-key] with an optional --vb-cs-private-key."
     )
 
 
@@ -73,36 +74,37 @@ def validate_verify_operation(
     vb_cs_node_rpc_url, vb_cs_address, vb_forwarder_url, vb_api_key
 ):
     """Validate the options for a verify (read) operation."""
-    # Direct node access: [--vb_cs_node_rpc_url, --vb_cs_address]
+    # Direct node access: [--vb-cs-node-rpc-url, --vb-cs-address]
     if vb_cs_node_rpc_url and vb_cs_address:
         return
-    # Forwarder access: [--vb_forwarder_url, --vb_api_key]
+    # Forwarder access: [--vb-forwarder-url, --vb-api-key]
     elif vb_forwarder_url and vb_api_key:
         return
     # Otherwise, invalid combination
     raise click.UsageError(
-        "For a verify (read) operation, you must specify either [--vb_cs_node_rpc_url, --vb_cs_address] "
-        "or [--vb_forwarder_url, --vb_api_key]."
+        "For a verify (read) operation, you must specify either [--vb-cs-node-rpc-url, --vb-cs-address] "
+        "or [--vb-forwarder-url, --vb-api-key]."
     )
 
 
-def global_options(operation_type: OperationType):
+def needs_config_options(operation_type: OperationType):
     """Decorator to add global configuration options and validate inputs based on operation type."""
 
-    def wrapper(f):
+    def config_options_wrapper(f):
+        @wraps(f)
         @click.option(
-            "--vb_cs_node_rpc_url", help="vBase commitment service node RPC URL"
+            "--vb-cs-node-rpc-url", help="vBase commitment service node RPC URL"
         )
         @click.option(
-            "--vb_cs_address", help="vBase commitment service smart contract address"
+            "--vb-cs-address", help="vBase commitment service smart contract address"
         )
         @click.option(
-            "--vb_cs_private_key", help="vBase commitment service private key"
+            "--vb-cs-private-key", help="vBase commitment service private key"
         )
-        @click.option("--vb_forwarder_url", help="vBase forwarder URL")
-        @click.option("--vb_api_key", help="vBase API key")
+        @click.option("--vb-forwarder-url", help="vBase forwarder URL")
+        @click.option("--vb-api-key", help="vBase API key")
         @click.pass_context
-        def new_func(
+        def wrapper(
             ctx,
             vb_cs_node_rpc_url,
             vb_cs_address,
@@ -133,6 +135,6 @@ def global_options(operation_type: OperationType):
 
             return f(ctx, *args, **kwargs)
 
-        return click.decorators.update_wrapper(new_func, f)
+        return wrapper
 
-    return wrapper
+    return config_options_wrapper
