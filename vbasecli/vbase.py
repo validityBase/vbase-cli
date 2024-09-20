@@ -1,11 +1,13 @@
 #!/usr/bin/python3
 
-import click
-import cloup
-from functools import update_wrapper, wraps
+"""vBase CLI for object commitment and verification"""
+
+from functools import wraps
 import logging
 import pprint
 import re
+import click
+import cloup
 
 from vbase import (
     VBaseClient,
@@ -13,11 +15,7 @@ from vbase import (
     ForwarderCommitmentService,
 )
 
-from vbasecli.workers import add_object_worker, verify_object_worker
 from vbasecli.config import load_config
-
-
-import re
 
 
 def is_valid_cid(s):
@@ -252,9 +250,7 @@ def verify_object(ctx, object_cid, object_cid_stdin):
     # Access global config from ctx.obj
     rpc_url, address, private_key = get_config_from_ctx(ctx)
 
-    # Verify object using the worker function
-    # verify_object_worker(object_cid_value)
-    pass
+    # TODO: Verify object
 
 
 if __name__ == "__main__":
