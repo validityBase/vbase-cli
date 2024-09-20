@@ -6,12 +6,15 @@ from functools import wraps
 import logging
 import pprint
 import re
+from typing import cast
 import click
 import cloup
+import pandas as pd
 
 from vbase import (
     VBaseClient,
     Web3HTTPCommitmentService,
+    IndexingService,
     ForwarderCommitmentService,
 )
 
@@ -157,6 +160,7 @@ def cli(ctx, verbose):
 @cloup.pass_context
 def commitment_service(ctx, *args, **kwargs):
     config = load_config()
+    # TODO: Replace print with proper debug and info calls with the proper --verbose flag control.
     print("commitment_service():")
     print("Loaded config:", pprint.pformat(config))
     print("kwargs:", pprint.pformat(kwargs))
@@ -204,6 +208,7 @@ cli.add_command(commitment_service)
     aliases=["ao"],
     show_constraints=True,
 )
+# TODO: Move this to a common decorator.
 @cloup.option_group(
     "Object CID options",
     cloup.option("--object-cid", help="Specify object CID"),
@@ -217,11 +222,13 @@ def add_object(ctx, object_cid, object_cid_stdin):
     logging.info("Adding object...")
     print("add_object():")
 
+    # TODO: Factor out common code.
     object_cid_value = get_object_cid(object_cid, object_cid_stdin)
     if not object_cid_value or not is_valid_cid(object_cid_value):
         raise click.UsageError("Bad object CID value.")
     print("object_cid_value =", object_cid_value)
 
+    # TODO: Factor out common code.
     # Access vbc from ctx.
     if not "vbc" in ctx.obj or not ctx.obj["vbc"]:
         raise click.UsageError("VBaseClient is not defined. Check the configuration.")
@@ -236,21 +243,69 @@ def add_object(ctx, object_cid, object_cid_stdin):
 commitment_service.add_command(add_object)
 
 
-@commitment_service.command()
-@needs_object_cid_options
+@cloup.command(
+    aliases=["vo"],
+    show_constraints=True,
+)
+# TODO: Move this to a common decorator.
+@cloup.option_group(
+    "Object CID options",
+    cloup.option("--object-cid", help="Specify object CID"),
+    cloup.option("--object-cid-stdin", is_flag=True, help="Read object CID from stdin"),
+    help="Options that define the content id (CID) for the object to be committed. ",
+    constraint=cloup.constraints.RequireExactly(1),
+)
+@cloup.option_group(
+    "Timestamp verification options",
+    cloup.option("--timestamp", help="Commitment timestamp"),
+    cloup.option("--timestamp-tol", help="Tolerance for commitment timestamp"),
+    help="Options that define the commitment timestamp and its tolerance. ",
+    # TODO: Add a constraint that tol alone is not allowed.
+)
 @cloup.pass_context
-def verify_object(ctx, object_cid, object_cid_stdin):
+def verify_object(ctx, object_cid, object_cid_stdin, timestamp, timestamp_tol):
     """Verify an object commitment"""
     logging.info("Verifying object...")
+    print("verify_object():")
 
+    # TODO: Factor out common code.
     object_cid_value = get_object_cid(object_cid, object_cid_stdin)
-    if object_cid_value is None:
-        return
+    if not object_cid_value or not is_valid_cid(object_cid_value):
+        raise click.UsageError("Bad object CID value.")
+    print("object_cid_value =", object_cid_value)
 
-    # Access global config from ctx.obj
-    rpc_url, address, private_key = get_config_from_ctx(ctx)
+    # TODO: Factor out common code.
+    # Access vbc from ctx.
+    if not "vbc" in ctx.obj or not ctx.obj["vbc"]:
+        raise click.UsageError("VBaseClient is not defined. Check the configuration.")
+    vbc = ctx.obj["vbc"]
+    print("vbc =", pprint.pformat(vbc.__dict__))
 
-    # TODO: Verify object
+    # Find all object commitments for user and object.
+    indexing_service = IndexingService.create_instance_from_commitment_service(
+        vbc.commitment_service
+    )
+    # TODO: Add find_user_object() and call that instead.
+    l_objects = indexing_service.find_objects(object_cid_value)
+
+    # Find the closest commitment to the target timestamp.
+    target_timestamp = pd.Timestamp(timestamp)
+    # Convert timestamps in the list to pd.Timestamp objects and find the closest one.
+    closest_object = min(
+        l_objects, key=lambda x: abs(pd.Timestamp(x["timestamp"]) - target_timestamp)
+    )
+    print("closest_object =", pprint.pformat(closest_object))
+
+    # Verify the timedelta for the closest commitment.
+    if not timestamp_tol:
+        timestamp_tol = pd.Timedelta("1s")
+    if pd.Timestamp(closest_object["timestamp"]) - target_timestamp > pd.Timedelta(
+        timestamp_tol
+    ):
+        raise click.UsageError("Timestamp verification failed.")
+
+
+commitment_service.add_command(verify_object)
 
 
 if __name__ == "__main__":
