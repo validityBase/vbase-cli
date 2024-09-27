@@ -290,7 +290,10 @@ def add_object(ctx, object_cid, object_cid_stdin):
 
     # Make the object commitment.
     receipt = vbc.add_object(object_cid_value)
-    click.echo("Added object =" + pprint.pformat(receipt))
+    # Format the transactionHash as a string to facilitate JSON conversions.
+    receipt["transactionHash"] = receipt["transactionHash"].hex()
+    # Print the receipt with double quotes to produce valid JSON.
+    click.echo("Added object = " + pprint.pformat(receipt).replace("'", '"'))
 
 
 commitment_service.add_command(add_object)
@@ -383,7 +386,9 @@ def verify_object(
     ):
         fail("Timestamp verification failed.")
 
-    click.echo("Found object commitment = " + pprint.pformat(closest_object))
+    click.echo(
+        "Found object commitment = " + pprint.pformat(closest_object).replace("'", '"')
+    )
     click.echo("Timestamp verification succeeded.")
 
 
