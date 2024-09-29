@@ -6,6 +6,7 @@ from functools import wraps
 import logging
 import pprint
 import re
+import tzlocal
 import click
 import cloup
 import pandas as pd
@@ -126,9 +127,15 @@ def get_timestamp(
         raise click.UsageError(
             "You must specify either --timestamp or --timestamp-stdin."
         )
+    LOG.debug("get_timestamp(): timestamp_value_str = %s", timestamp_value_str)
 
     verify_timestamp_value(timestamp_value_str)
     timestamp_value = pd.Timestamp(timestamp_value_str)
+
+    # Ensure timestamp_value is timezone-aware.
+    # Localize the timestamp if needed.
+    if timestamp_value.tz is None:
+        timestamp_value = timestamp_value.tz_localize(tzlocal.get_localzone())
 
     LOG.info("get_timestamp(): timestamp_value = %s", timestamp_value)
 

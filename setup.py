@@ -10,6 +10,9 @@ with open("README.md", encoding="utf-8") as f:
 with open("requirements.txt", encoding="utf-8") as f:
     requirements = f.read().splitlines()
 
+# Filter out Git-based dependencies, as they aren't supported in install_requires.
+requirements = [req for req in requirements if not req.startswith("git+")]
+
 setup(
     name="vbase-cli",
     version="0.0.1",
@@ -21,7 +24,7 @@ setup(
     url="https://github.com/validityBase/vbase-py",
     packages=find_packages(),
     package_data={
-        "": ["../requirements.txt", "abi/*.json"],
+        "": ["../requirements.txt"],
     },
     install_requires=requirements,
     classifiers=[
@@ -30,6 +33,6 @@ setup(
     ],
     python_requires=">=3.8",
     entry_points={
-        "console_scripts": ["vbase=vbasecli.vbase:cli"],
+        "console_scripts": ["vbase=vbasecli.cli:cli"],
     },
 )

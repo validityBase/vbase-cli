@@ -1,10 +1,12 @@
+"""Test of the vBase CLI commitment service commands."""
+
 import json
 import re
 import unittest
 from click.testing import CliRunner
 from parameterized import parameterized
 
-from vbasecli.vbase import cli
+from vbasecli.cli import cli
 
 
 # TODO: This function is duplicated in vbase. Refactor to avoid duplication.
