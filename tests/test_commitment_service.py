@@ -110,6 +110,35 @@ class TestCommitmentService(unittest.TestCase):
             (_LOCALHOST_COMMITMENT_SERVICE_ARGS,),
         ]
     )
+    def test_add_verify_object_with_object_cid_padding(self, args):
+        """Test the add_object command with object_cid followed by verify_object."""
+        args_add = args + [
+            "add-object",
+            "--object-cid",
+            TEST_HASH1[15:],
+            "--pad-object-cid",
+        ]
+        result = self.runner.invoke(cli, args_add)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn(f'Added object = {{"objectCid": "{TEST_HASH1}"', result.output)
+        timestamp = get_timestamp_from_output(self, result.output)
+        args_verify = args + [
+            "verify-object",
+            "--object-cid",
+            TEST_HASH1[15:],
+            "--pad-object-cid",
+            "--timestamp",
+            timestamp,
+        ]
+        result = self.runner.invoke(cli, args_verify)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Timestamp verification succeeded.", result.output)
+
+    @parameterized.expand(
+        [
+            (_LOCALHOST_COMMITMENT_SERVICE_ARGS,),
+        ]
+    )
     def test_add_verify_object_with_object_cid_timestamp_tolerance(self, args):
         """Test the add_object command with object_cid followed by verify_object
         with timestamp tolerance."""

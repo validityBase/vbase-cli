@@ -80,7 +80,10 @@ def needs_object_cid_options(f):
 
 
 def get_object_cid(
-    object_cid: str, object_cid_stdin: str, l_stdin_text_stream: list[str] | None
+    object_cid: str,
+    object_cid_stdin: str,
+    pad_object_cid: bool,
+    l_stdin_text_stream: list[str] | None,
 ) -> tuple[str, list[str]]:
     """Helper function to get object_cid from argument or stdin."""
     # Handle object_cid and object_cid-stdin.
@@ -106,9 +109,16 @@ def get_object_cid(
     # Strip leading and trailing whitespace to make sure the CID is clean
     # and hex string -> bytes conversion works correctly.
     object_cid_value = object_cid_value.strip()
-    # Add '0x' prefix to the hex object cid if it is missing.
-    if not object_cid_value.startswith("0x"):
-        object_cid_value = "0x" + object_cid_value
+
+    # Pad the object CID with zeros if necessary.
+    # We must strip the leading '0x' prefix before padding.
+    if object_cid_value.startswith("0x"):
+        object_cid_value = object_cid_value[2:]
+    if pad_object_cid:
+        object_cid_value = object_cid_value.rjust(64, "0")
+
+    # Add '0x' prefix to the hex object cid for compatibility with lower layers.
+    object_cid_value = "0x" + object_cid_value
 
     verify_object_cid_value(object_cid_value)
 
@@ -280,13 +290,24 @@ cli.add_command(commitment_service)
     help="Options that define the content id (CID) for the object to be committed. ",
     constraint=cloup.constraints.RequireExactly(1),
 )
+@cloup.option_group(
+    "Object CID format options",
+    cloup.option(
+        "--pad-object-cid",
+        is_flag=True,
+        help="Pad the object CID with zeros if necessary",
+    ),
+    help="Options that define the content id (CID) format. ",
+)
 @cloup.pass_context
-def add_object(ctx, object_cid, object_cid_stdin):
+def add_object(ctx, object_cid, object_cid_stdin, pad_object_cid):
     """Create an object commitment"""
 
     LOG.info("Adding object...")
 
-    object_cid_value, _ = get_object_cid(object_cid, object_cid_stdin, None)
+    object_cid_value, _ = get_object_cid(
+        object_cid, object_cid_stdin, pad_object_cid, None
+    )
 
     # TODO: Factor out common code.
     # Access vbc from ctx.
@@ -324,6 +345,15 @@ def fail(msg: str):
     constraint=cloup.constraints.RequireExactly(1),
 )
 @cloup.option_group(
+    "Object CID format options",
+    cloup.option(
+        "--pad-object-cid",
+        is_flag=True,
+        help="Pad the object CID with zeros if necessary",
+    ),
+    help="Options that define the content id (CID) format. ",
+)
+@cloup.option_group(
     "Timestamp verification options",
     cloup.option("--timestamp", help="Commitment timestamp"),
     cloup.option("--timestamp-stdin", is_flag=True, help="Read timestamp from stdin"),
@@ -336,17 +366,24 @@ def fail(msg: str):
     # TODO: Add a constraint that tol alone is not allowed.
 )
 @cloup.pass_context
-# The commands must take a large number of arguments.
-# pylint: disable=too-many-arguments
+# The commands must take a large number of arguments
+# and conseuqntly has a large number of local variables.
+# pylint: disable=too-many-arguments, too-many-locals
 def verify_object(
-    ctx, object_cid, object_cid_stdin, timestamp, timestamp_stdin, timestamp_tol
+    ctx,
+    object_cid,
+    object_cid_stdin,
+    pad_object_cid,
+    timestamp,
+    timestamp_stdin,
+    timestamp_tol,
 ):
     """Verify an object commitment"""
 
     LOG.info("Verifying object...")
 
     object_cid_value, l_stdin_text_stream = get_object_cid(
-        object_cid, object_cid_stdin, None
+        object_cid, object_cid_stdin, pad_object_cid, None
     )
     LOG.debug("verify_object(): object_cid_value = %s", object_cid_value)
     timestamp_value, _ = get_timestamp(timestamp, timestamp_stdin, l_stdin_text_stream)
@@ -392,7 +429,12 @@ def verify_object(
     except ValueError as e:
         raise click.BadParameter(f"Invalid pd.Timedelta: {timestamp_tol}. Error: {e}")
 
-    if abs(pd.Timestamp(closest_object["timestamp"]) - timestamp_value) > pd_timedelta:
+    closest_object_timedelta = abs(
+        pd.Timestamp(closest_object["timestamp"]) - timestamp_value
+    )
+    LOG.debug("Closest object timedelta = %s", closest_object_timedelta)
+
+    if closest_object_timedelta > pd_timedelta:
         fail("Timestamp verification failed.")
 
     click.echo(
