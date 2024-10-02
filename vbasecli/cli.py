@@ -80,14 +80,22 @@ def needs_object_cid_options(f):
 
 
 def get_object_cid(
-    object_cid: str, object_cid_stdin: str, l_stdin_text_stream: list[str]
+    object_cid: str,
+    object_cid_stdin: str,
+    pad_object_cid: bool,
+    l_stdin_text_stream: list[str] | None,
 ) -> tuple[str, list[str]]:
     """Helper function to get object_cid from argument or stdin."""
     # Handle object_cid and object_cid-stdin.
-    object_cid_value = ""
     if object_cid:
         object_cid_value = object_cid
     elif object_cid_stdin:
+        if not l_stdin_text_stream:
+            # Get the stdin input stream.
+            # click.get_text_stream("stdin") can only be called once.
+            # The callees of get_object_cid() and get_timestamp() will use this stream
+            # and advance through it if they consume its values.
+            l_stdin_text_stream = click.get_text_stream("stdin").read().split()
         object_cid_value = l_stdin_text_stream[0].strip()
         l_stdin_text_stream = l_stdin_text_stream[1:]
     else:
@@ -101,9 +109,16 @@ def get_object_cid(
     # Strip leading and trailing whitespace to make sure the CID is clean
     # and hex string -> bytes conversion works correctly.
     object_cid_value = object_cid_value.strip()
-    # Add '0x' prefix to the hex object cid if it is missing.
-    if not object_cid_value.startswith("0x"):
-        object_cid_value = "0x" + object_cid_value
+
+    # Pad the object CID with zeros if necessary.
+    # We must strip the leading '0x' prefix before padding.
+    if object_cid_value.startswith("0x"):
+        object_cid_value = object_cid_value[2:]
+    if pad_object_cid:
+        object_cid_value = object_cid_value.rjust(64, "0")
+
+    # Add '0x' prefix to the hex object cid for compatibility with lower layers.
+    object_cid_value = "0x" + object_cid_value
 
     verify_object_cid_value(object_cid_value)
 
@@ -113,14 +128,15 @@ def get_object_cid(
 
 
 def get_timestamp(
-    timestamp: str, timestamp_stdin: str, l_stdin_text_stream: list[str]
+    timestamp: str, timestamp_stdin: str, l_stdin_text_stream: list[str] | None
 ) -> tuple[pd.Timestamp, list[str]]:
     """Helper function to get timestamp from argument or stdin."""
     # Handle timestamp and timestamp-stdin.
-    timestamp_value = ""
     if timestamp:
         timestamp_value_str = timestamp
     elif timestamp_stdin:
+        if not l_stdin_text_stream:
+            l_stdin_text_stream = click.get_text_stream("stdin").read().split()
         timestamp_value_str = l_stdin_text_stream[0].strip()
         l_stdin_text_stream = l_stdin_text_stream[1:]
     else:
@@ -274,19 +290,23 @@ cli.add_command(commitment_service)
     help="Options that define the content id (CID) for the object to be committed. ",
     constraint=cloup.constraints.RequireExactly(1),
 )
+@cloup.option_group(
+    "Object CID format options",
+    cloup.option(
+        "--pad-object-cid",
+        is_flag=True,
+        help="Pad the object CID with zeros if necessary",
+    ),
+    help="Options that define the content id (CID) format. ",
+)
 @cloup.pass_context
-def add_object(ctx, object_cid, object_cid_stdin):
+def add_object(ctx, object_cid, object_cid_stdin, pad_object_cid):
     """Create an object commitment"""
 
     LOG.info("Adding object...")
 
-    # Get the stdin input stream in case it is used to define parameters.
-    # This is necessary because click.get_text_stream("stdin") can only be called once.
-    # The callees of get_object_cid() and get_timestamp() will use this stream
-    # and advance through it if they consume its values.
-    l_stdin_text_stream = click.get_text_stream("stdin").read().split()
-    object_cid_value, l_stdin_text_stream = get_object_cid(
-        object_cid, object_cid_stdin, l_stdin_text_stream
+    object_cid_value, _ = get_object_cid(
+        object_cid, object_cid_stdin, pad_object_cid, None
     )
 
     # TODO: Factor out common code.
@@ -325,30 +345,49 @@ def fail(msg: str):
     constraint=cloup.constraints.RequireExactly(1),
 )
 @cloup.option_group(
+    "Object CID format options",
+    cloup.option(
+        "--pad-object-cid",
+        is_flag=True,
+        help="Pad the object CID with zeros if necessary",
+    ),
+    help="Options that define the content id (CID) format. ",
+)
+@cloup.option_group(
     "Timestamp verification options",
     cloup.option("--timestamp", help="Commitment timestamp"),
     cloup.option("--timestamp-stdin", is_flag=True, help="Read timestamp from stdin"),
-    cloup.option("--timestamp-tol", help="Tolerance for commitment timestamp"),
+    cloup.option(
+        "--timestamp-tol",
+        default="1s",
+        help="Tolerance for commitment timestamp as a pd.Timedelta string",
+    ),
     help="Options that define the commitment timestamp and its tolerance. ",
     # TODO: Add a constraint that tol alone is not allowed.
 )
 @cloup.pass_context
-# The commands must take a large number of arguments.
-# pylint: disable=too-many-arguments
+# The commands must take a large number of arguments
+# and conseuqntly has a large number of local variables.
+# pylint: disable=too-many-arguments, too-many-locals
 def verify_object(
-    ctx, object_cid, object_cid_stdin, timestamp, timestamp_stdin, timestamp_tol
+    ctx,
+    object_cid,
+    object_cid_stdin,
+    pad_object_cid,
+    timestamp,
+    timestamp_stdin,
+    timestamp_tol,
 ):
     """Verify an object commitment"""
 
     LOG.info("Verifying object...")
 
-    l_stdin_text_stream = click.get_text_stream("stdin").read().split()
     object_cid_value, l_stdin_text_stream = get_object_cid(
-        object_cid, object_cid_stdin, l_stdin_text_stream
+        object_cid, object_cid_stdin, pad_object_cid, None
     )
-    timestamp_value, l_stdin_text_stream = get_timestamp(
-        timestamp, timestamp_stdin, l_stdin_text_stream
-    )
+    LOG.debug("verify_object(): object_cid_value = %s", object_cid_value)
+    timestamp_value, _ = get_timestamp(timestamp, timestamp_stdin, l_stdin_text_stream)
+    LOG.debug("verify_object(): timestamp_value = %s", timestamp_value)
 
     # TODO: Factor out common code.
     # Access vbc from ctx.
@@ -357,11 +396,10 @@ def verify_object(
     vbc = ctx.obj["vbc"]
 
     # Find all object commitments for user and object.
-    indexing_service = IndexingService.create_instance_from_commitment_service(
-        vbc.commitment_service
-    )
     # TODO: Add find_user_object() and call that instead.
-    l_objects = indexing_service.find_objects(object_cid_value)
+    l_objects = IndexingService.create_instance_from_commitment_service(
+        vbc.commitment_service
+    ).find_objects(object_cid_value)
     if len(l_objects) == 0:
         fail("No matching objects found.")
 
@@ -370,6 +408,7 @@ def verify_object(
     closest_object = min(
         l_objects, key=lambda x: abs(pd.Timestamp(x["timestamp"]) - timestamp_value)
     )
+    LOG.debug("Closest object = %s", closest_object)
 
     # TODO: Technically, one of the other commitments may be close enough and valid.
     # We could traverse the list and verify each one until we find a successful verification.
@@ -378,19 +417,24 @@ def verify_object(
 
     # Verify the commitment for this object. Just because it came from the indexing service
     # does not mean it has a commitment service commitment.
-    ret = vbc.verify_user_object(
+    if not vbc.verify_user_object(
         vbc.get_default_user(), object_cid_value, closest_object["timestamp"]
-    )
-    if not ret:
+    ):
         fail("Commitment verification failed.")
 
     # Verify the timedelta for the closest commitment.
-    # TODO: Clarify that default tolerance is 1 second.
-    if not timestamp_tol:
-        timestamp_tol = pd.Timedelta("1s")
-    if pd.Timestamp(closest_object["timestamp"]) - timestamp_value > pd.Timedelta(
-        timestamp_tol
-    ):
+    try:
+        # Try to convert the input to a pandas Timedelta
+        pd_timedelta = pd.Timedelta(timestamp_tol)
+    except ValueError as e:
+        raise click.BadParameter(f"Invalid pd.Timedelta: {timestamp_tol}. Error: {e}")
+
+    closest_object_timedelta = abs(
+        pd.Timestamp(closest_object["timestamp"]) - timestamp_value
+    )
+    LOG.debug("Closest object timedelta = %s", closest_object_timedelta)
+
+    if closest_object_timedelta > pd_timedelta:
         fail("Timestamp verification failed.")
 
     click.echo(

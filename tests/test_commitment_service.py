@@ -1,10 +1,12 @@
 """Test of the vBase CLI commitment service commands."""
 
+import click
 import json
 import re
 import unittest
 from click.testing import CliRunner
 from parameterized import parameterized
+import pandas as pd
 
 from vbasecli.cli import cli
 
@@ -36,6 +38,21 @@ _LOCALHOST_COMMITMENT_SERVICE_ARGS = [
 ]
 
 
+def get_timestamp_from_output(test_case: unittest.TestCase, output: str) -> str:
+    """
+    Get the timestamp from the output.
+
+    :param output: The output string.
+    :return: The timestamp.
+    """
+    object_match = re.search(r"Added object = ({.*})", output, re.DOTALL)
+    test_case.assertIsNotNone(object_match)
+    json_str = object_match.group(1)
+    test_case.assertIsNotNone(json_str)
+    parsed_object = json.loads(json_str)
+    return parsed_object["timestamp"]
+
+
 class TestCommitmentService(unittest.TestCase):
     """Test the VBase CLI commitment-service commands."""
 
@@ -63,9 +80,7 @@ class TestCommitmentService(unittest.TestCase):
 
     @parameterized.expand(
         [
-            # Test using a local node RPC URL.
             (_LOCALHOST_COMMITMENT_SERVICE_ARGS,),
-            # TODO: Test using a local forwarder URL.
         ]
     )
     def test_add_verify_object_with_object_cid(self, args):
@@ -78,19 +93,86 @@ class TestCommitmentService(unittest.TestCase):
         result = self.runner.invoke(cli, args_add)
         self.assertEqual(result.exit_code, 0)
         self.assertIn(f'Added object = {{"objectCid": "{TEST_HASH1}"', result.output)
-        # Get the timestamp from the output.
-        object_match = re.search(r"Added object = ({.*})", result.output, re.DOTALL)
-        self.assertIsNotNone(object_match)
-        json_str = object_match.group(1)
-        self.assertIsNotNone(json_str)
-        parsed_object = json.loads(json_str)
-        timestamp = parsed_object["timestamp"]
+        timestamp = get_timestamp_from_output(self, result.output)
         args_verify = args + [
             "verify-object",
             "--object-cid",
             TEST_HASH1,
             "--timestamp",
             timestamp,
+        ]
+        result = self.runner.invoke(cli, args_verify)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Timestamp verification succeeded.", result.output)
+
+    @parameterized.expand(
+        [
+            (_LOCALHOST_COMMITMENT_SERVICE_ARGS,),
+        ]
+    )
+    def test_add_verify_object_with_object_cid_padding(self, args):
+        """Test the add_object command with object_cid followed by verify_object."""
+        args_add = args + [
+            "add-object",
+            "--object-cid",
+            TEST_HASH1[15:],
+            "--pad-object-cid",
+        ]
+        result = self.runner.invoke(cli, args_add)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn(f'Added object = {{"objectCid": "{TEST_HASH1}"', result.output)
+        timestamp = get_timestamp_from_output(self, result.output)
+        args_verify = args + [
+            "verify-object",
+            "--object-cid",
+            TEST_HASH1[15:],
+            "--pad-object-cid",
+            "--timestamp",
+            timestamp,
+        ]
+        result = self.runner.invoke(cli, args_verify)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Timestamp verification succeeded.", result.output)
+
+    @parameterized.expand(
+        [
+            (_LOCALHOST_COMMITMENT_SERVICE_ARGS,),
+        ]
+    )
+    def test_add_verify_object_with_object_cid_timestamp_tolerance(self, args):
+        """Test the add_object command with object_cid followed by verify_object
+        with timestamp tolerance."""
+        args_add = args + [
+            "add-object",
+            "--object-cid",
+            TEST_HASH1,
+        ]
+        result = self.runner.invoke(cli, args_add)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn(f'Added object = {{"objectCid": "{TEST_HASH1}"', result.output)
+        timestamp = get_timestamp_from_output(self, result.output)
+        # Add 5 seconds to the pd.Timestamp object.
+        timestamp_5s_later = pd.Timestamp(timestamp) + pd.Timedelta("5s")
+        # Verify that the verification failed with tight tolerance.
+        args_verify = args + [
+            "verify-object",
+            "--object-cid",
+            TEST_HASH1,
+            "--timestamp",
+            timestamp_5s_later,
+        ]
+        result = self.runner.invoke(cli, args_verify)
+        self.assertEqual(result.exit_code, 1)
+        self.assertIn("Timestamp verification failed.", result.output)
+        # Verify that the verification succeeded with looser tolerance.
+        args_verify = args + [
+            "verify-object",
+            "--object-cid",
+            TEST_HASH1,
+            "--timestamp",
+            timestamp_5s_later,
+            "--timestamp-tol",
+            "10s",
         ]
         result = self.runner.invoke(cli, args_verify)
         self.assertEqual(result.exit_code, 0)
