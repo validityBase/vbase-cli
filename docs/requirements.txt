@@ -1,0 +1,4 @@
+myst-parser
+sphinx-argparse-cli
+sphinx_markdown_builder
+sphinx_click
