@@ -2,7 +2,6 @@
 
 import json
 import re
-import time
 import unittest
 from click.testing import CliRunner
 from parameterized import parameterized
@@ -36,7 +35,6 @@ _LOCALHOST_COMMITMENT_SERVICE_ARGS = [
     "--vb-cs-private-key",
     "0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e",
 ]
-
 
 def parse_added_object_json(output: str) -> dict:
     """
@@ -104,7 +102,6 @@ class TestCommitmentService(unittest.TestCase):
         added = parse_added_object_json(result.output)
         self.assertEqual(added["objectCid"], TEST_HASH1)
         timestamp = get_timestamp_from_output(self, result.output)
-        time.sleep(2)
         args_verify = args + [
             "verify-object",
             "--object-cid",
@@ -134,7 +131,6 @@ class TestCommitmentService(unittest.TestCase):
         added = parse_added_object_json(result.output)
         self.assertEqual(added["objectCid"], TEST_HASH1)
         timestamp = get_timestamp_from_output(self, result.output)
-        time.sleep(2)
         args_verify = args + [
             "verify-object",
             "--object-cid",
@@ -165,7 +161,6 @@ class TestCommitmentService(unittest.TestCase):
         added = parse_added_object_json(result.output)
         self.assertEqual(added["objectCid"], TEST_HASH1)
         timestamp = get_timestamp_from_output(self, result.output)
-        time.sleep(2)
         timestamp_5s_later = (
             pd.Timestamp(timestamp) + pd.Timedelta("5s")
         ).isoformat()

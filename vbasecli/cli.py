@@ -399,7 +399,7 @@ def verify_object(
     # TODO: Add find_user_object() and call that instead.
     l_objects = IndexingService.create_instance_from_commitment_service(
         vbc.commitment_service
-    ).find_objects(object_cid_value)
+    ).find_objects([object_cid_value])
     if len(l_objects) == 0:
         fail("No matching objects found.")
 
