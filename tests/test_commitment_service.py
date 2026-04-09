@@ -1,8 +1,8 @@
 """Test of the vBase CLI commitment service commands."""
 
-import click
 import json
 import re
+import time
 import unittest
 from click.testing import CliRunner
 from parameterized import parameterized
@@ -54,12 +54,11 @@ def get_timestamp_from_output(test_case: unittest.TestCase, output: str) -> str:
     """
     Get the timestamp from the output.
 
-    :param output: The output string.
-    :return: The timestamp.
+    Normalizes to ISO-8601 so --timestamp receives a stable string for pd.Timestamp.
     """
     parsed_object = parse_added_object_json(output)
     test_case.assertIn("timestamp", parsed_object)
-    return parsed_object["timestamp"]
+    return pd.Timestamp(parsed_object["timestamp"]).isoformat()
 
 
 class TestCommitmentService(unittest.TestCase):
@@ -67,7 +66,7 @@ class TestCommitmentService(unittest.TestCase):
 
     def setUp(self):
         """Set up a test runner and environment before each test."""
-        self.runner = CliRunner()
+        self.runner = CliRunner(mix_stderr=True)
 
     @parameterized.expand(
         [
@@ -105,6 +104,7 @@ class TestCommitmentService(unittest.TestCase):
         added = parse_added_object_json(result.output)
         self.assertEqual(added["objectCid"], TEST_HASH1)
         timestamp = get_timestamp_from_output(self, result.output)
+        time.sleep(2)
         args_verify = args + [
             "verify-object",
             "--object-cid",
@@ -113,7 +113,7 @@ class TestCommitmentService(unittest.TestCase):
             timestamp,
         ]
         result = self.runner.invoke(cli, args_verify)
-        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.exit_code, 0, msg=result.output)
         self.assertIn("Timestamp verification succeeded.", result.output)
 
     @parameterized.expand(
@@ -134,6 +134,7 @@ class TestCommitmentService(unittest.TestCase):
         added = parse_added_object_json(result.output)
         self.assertEqual(added["objectCid"], TEST_HASH1)
         timestamp = get_timestamp_from_output(self, result.output)
+        time.sleep(2)
         args_verify = args + [
             "verify-object",
             "--object-cid",
@@ -143,7 +144,7 @@ class TestCommitmentService(unittest.TestCase):
             timestamp,
         ]
         result = self.runner.invoke(cli, args_verify)
-        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.exit_code, 0, msg=result.output)
         self.assertIn("Timestamp verification succeeded.", result.output)
 
     @parameterized.expand(
@@ -164,9 +165,10 @@ class TestCommitmentService(unittest.TestCase):
         added = parse_added_object_json(result.output)
         self.assertEqual(added["objectCid"], TEST_HASH1)
         timestamp = get_timestamp_from_output(self, result.output)
-        # Add 5 seconds to the pd.Timestamp object.
-        timestamp_5s_later = pd.Timestamp(timestamp) + pd.Timedelta("5s")
-        # Verify that the verification failed with tight tolerance.
+        time.sleep(2)
+        timestamp_5s_later = (
+            pd.Timestamp(timestamp) + pd.Timedelta("5s")
+        ).isoformat()
         args_verify = args + [
             "verify-object",
             "--object-cid",
@@ -175,9 +177,8 @@ class TestCommitmentService(unittest.TestCase):
             timestamp_5s_later,
         ]
         result = self.runner.invoke(cli, args_verify)
-        self.assertEqual(result.exit_code, 1)
+        self.assertEqual(result.exit_code, 1, msg=result.output)
         self.assertIn("Timestamp verification failed.", result.output)
-        # Verify that the verification succeeded with looser tolerance.
         args_verify = args + [
             "verify-object",
             "--object-cid",
@@ -188,7 +189,7 @@ class TestCommitmentService(unittest.TestCase):
             "10s",
         ]
         result = self.runner.invoke(cli, args_verify)
-        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.exit_code, 0, msg=result.output)
         self.assertIn("Timestamp verification succeeded.", result.output)
 
 
