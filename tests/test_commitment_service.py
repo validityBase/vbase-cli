@@ -38,6 +38,18 @@ _LOCALHOST_COMMITMENT_SERVICE_ARGS = [
 ]
 
 
+def parse_added_object_json(output: str) -> dict:
+    """
+    Parse the JSON object printed after 'Added object = '.
+
+    Key order and pretty-printing in the CLI output must not affect tests.
+    """
+    object_match = re.search(r"Added object = ({.*})", output, re.DOTALL)
+    if object_match is None:
+        raise ValueError("No 'Added object = {...}' JSON in output")
+    return json.loads(object_match.group(1))
+
+
 def get_timestamp_from_output(test_case: unittest.TestCase, output: str) -> str:
     """
     Get the timestamp from the output.
@@ -45,11 +57,8 @@ def get_timestamp_from_output(test_case: unittest.TestCase, output: str) -> str:
     :param output: The output string.
     :return: The timestamp.
     """
-    object_match = re.search(r"Added object = ({.*})", output, re.DOTALL)
-    test_case.assertIsNotNone(object_match)
-    json_str = object_match.group(1)
-    test_case.assertIsNotNone(json_str)
-    parsed_object = json.loads(json_str)
+    parsed_object = parse_added_object_json(output)
+    test_case.assertIn("timestamp", parsed_object)
     return parsed_object["timestamp"]
 
 
@@ -76,7 +85,8 @@ class TestCommitmentService(unittest.TestCase):
         ]
         result = self.runner.invoke(cli, args_add)
         self.assertEqual(result.exit_code, 0)
-        self.assertIn(f'Added object = {{"objectCid": "{TEST_HASH1}"', result.output)
+        added = parse_added_object_json(result.output)
+        self.assertEqual(added["objectCid"], TEST_HASH1)
 
     @parameterized.expand(
         [
@@ -92,7 +102,8 @@ class TestCommitmentService(unittest.TestCase):
         ]
         result = self.runner.invoke(cli, args_add)
         self.assertEqual(result.exit_code, 0)
-        self.assertIn(f'Added object = {{"objectCid": "{TEST_HASH1}"', result.output)
+        added = parse_added_object_json(result.output)
+        self.assertEqual(added["objectCid"], TEST_HASH1)
         timestamp = get_timestamp_from_output(self, result.output)
         args_verify = args + [
             "verify-object",
@@ -120,7 +131,8 @@ class TestCommitmentService(unittest.TestCase):
         ]
         result = self.runner.invoke(cli, args_add)
         self.assertEqual(result.exit_code, 0)
-        self.assertIn(f'Added object = {{"objectCid": "{TEST_HASH1}"', result.output)
+        added = parse_added_object_json(result.output)
+        self.assertEqual(added["objectCid"], TEST_HASH1)
         timestamp = get_timestamp_from_output(self, result.output)
         args_verify = args + [
             "verify-object",
@@ -149,7 +161,8 @@ class TestCommitmentService(unittest.TestCase):
         ]
         result = self.runner.invoke(cli, args_add)
         self.assertEqual(result.exit_code, 0)
-        self.assertIn(f'Added object = {{"objectCid": "{TEST_HASH1}"', result.output)
+        added = parse_added_object_json(result.output)
+        self.assertEqual(added["objectCid"], TEST_HASH1)
         timestamp = get_timestamp_from_output(self, result.output)
         # Add 5 seconds to the pd.Timestamp object.
         timestamp_5s_later = pd.Timestamp(timestamp) + pd.Timedelta("5s")
