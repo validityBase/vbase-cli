@@ -2,8 +2,9 @@
 
 import json
 import re
+import time
 import unittest
-from click.testing import CliRunner
+from click.testing import CliRunner, Result
 from parameterized import parameterized
 import pandas as pd
 
@@ -36,6 +37,20 @@ _LOCALHOST_COMMITMENT_SERVICE_ARGS = [
     "0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e",
 ]
 
+# CLI output excerpt length when raising parse errors (keeps CI logs readable).
+_OUTPUT_EXCERPT_MAX_CHARS = 1200
+
+
+def _truncate_output_for_exc(
+    output: str, max_chars: int = _OUTPUT_EXCERPT_MAX_CHARS
+) -> str:
+    """Return output or a head excerpt plus omitted length for exception messages."""
+    if len(output) <= max_chars:
+        return output
+    omitted = len(output) - max_chars
+    return f"{output[:max_chars]}\n... ({omitted} more characters)"
+
+
 def parse_added_object_json(output: str) -> dict:
     """
     Parse the JSON object printed after 'Added object = '.
@@ -44,8 +59,50 @@ def parse_added_object_json(output: str) -> dict:
     """
     object_match = re.search(r"Added object = ({.*})", output, re.DOTALL)
     if object_match is None:
-        raise ValueError("No 'Added object = {...}' JSON in output")
+        excerpt = _truncate_output_for_exc(output)
+        raise ValueError(
+            "No 'Added object = {...}' JSON in output. Excerpt:\n" + excerpt
+        )
     return json.loads(object_match.group(1))
+
+
+def assert_object_cid_matches(
+    test_case: unittest.TestCase, added: dict, expected_cid: str
+) -> None:
+    """Assert parsed JSON contains objectCid and it matches expected (clear failures)."""
+    test_case.assertIn(
+        "objectCid",
+        added,
+        msg=f"parsed JSON keys: {sorted(added.keys())}",
+    )
+    test_case.assertEqual(added["objectCid"], expected_cid)
+
+
+def wait_until_verify_succeeds(
+    runner: CliRunner,
+    args_verify: list[str],
+    *,
+    timeout_sec: float = 30.0,
+    poll_interval_sec: float = 0.25,
+) -> Result:
+    """
+    Poll verify-object until exit 0 or timeout.
+
+    Chain/indexing can lag add-object; this avoids fixed sleeps and reduces CI flakiness.
+    """
+    deadline = time.monotonic() + timeout_sec
+    last_result = None
+    while time.monotonic() < deadline:
+        last_result = runner.invoke(cli, args_verify)
+        if last_result.exit_code == 0:
+            return last_result
+        time.sleep(poll_interval_sec)
+    excerpt = _truncate_output_for_exc(last_result.output if last_result else "")
+    raise AssertionError(
+        f"verify-object did not succeed within {timeout_sec}s. "
+        f"Last exit_code={getattr(last_result, 'exit_code', None)}. Output excerpt:\n"
+        f"{excerpt}"
+    )
 
 
 def get_timestamp_from_output(test_case: unittest.TestCase, output: str) -> str:
@@ -83,7 +140,7 @@ class TestCommitmentService(unittest.TestCase):
         result = self.runner.invoke(cli, args_add)
         self.assertEqual(result.exit_code, 0)
         added = parse_added_object_json(result.output)
-        self.assertEqual(added["objectCid"], TEST_HASH1)
+        assert_object_cid_matches(self, added, TEST_HASH1)
 
     @parameterized.expand(
         [
@@ -100,7 +157,7 @@ class TestCommitmentService(unittest.TestCase):
         result = self.runner.invoke(cli, args_add)
         self.assertEqual(result.exit_code, 0)
         added = parse_added_object_json(result.output)
-        self.assertEqual(added["objectCid"], TEST_HASH1)
+        assert_object_cid_matches(self, added, TEST_HASH1)
         timestamp = get_timestamp_from_output(self, result.output)
         args_verify = args + [
             "verify-object",
@@ -109,8 +166,7 @@ class TestCommitmentService(unittest.TestCase):
             "--timestamp",
             timestamp,
         ]
-        result = self.runner.invoke(cli, args_verify)
-        self.assertEqual(result.exit_code, 0, msg=result.output)
+        result = wait_until_verify_succeeds(self.runner, args_verify)
         self.assertIn("Timestamp verification succeeded.", result.output)
 
     @parameterized.expand(
@@ -129,7 +185,7 @@ class TestCommitmentService(unittest.TestCase):
         result = self.runner.invoke(cli, args_add)
         self.assertEqual(result.exit_code, 0)
         added = parse_added_object_json(result.output)
-        self.assertEqual(added["objectCid"], TEST_HASH1)
+        assert_object_cid_matches(self, added, TEST_HASH1)
         timestamp = get_timestamp_from_output(self, result.output)
         args_verify = args + [
             "verify-object",
@@ -139,8 +195,7 @@ class TestCommitmentService(unittest.TestCase):
             "--timestamp",
             timestamp,
         ]
-        result = self.runner.invoke(cli, args_verify)
-        self.assertEqual(result.exit_code, 0, msg=result.output)
+        result = wait_until_verify_succeeds(self.runner, args_verify)
         self.assertIn("Timestamp verification succeeded.", result.output)
 
     @parameterized.expand(
@@ -159,11 +214,17 @@ class TestCommitmentService(unittest.TestCase):
         result = self.runner.invoke(cli, args_add)
         self.assertEqual(result.exit_code, 0)
         added = parse_added_object_json(result.output)
-        self.assertEqual(added["objectCid"], TEST_HASH1)
+        assert_object_cid_matches(self, added, TEST_HASH1)
         timestamp = get_timestamp_from_output(self, result.output)
-        timestamp_5s_later = (
-            pd.Timestamp(timestamp) + pd.Timedelta("5s")
-        ).isoformat()
+        args_verify_ok = args + [
+            "verify-object",
+            "--object-cid",
+            TEST_HASH1,
+            "--timestamp",
+            timestamp,
+        ]
+        wait_until_verify_succeeds(self.runner, args_verify_ok)
+        timestamp_5s_later = (pd.Timestamp(timestamp) + pd.Timedelta("5s")).isoformat()
         args_verify = args + [
             "verify-object",
             "--object-cid",
@@ -183,8 +244,7 @@ class TestCommitmentService(unittest.TestCase):
             "--timestamp-tol",
             "10s",
         ]
-        result = self.runner.invoke(cli, args_verify)
-        self.assertEqual(result.exit_code, 0, msg=result.output)
+        result = wait_until_verify_succeeds(self.runner, args_verify)
         self.assertIn("Timestamp verification succeeded.", result.output)
 
 
