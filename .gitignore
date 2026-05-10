@@ -37,6 +37,7 @@ nosetests.xml
 # Config
 .env*
 !config/*
+.claude/settings.local.json
 
 # Sphinx
 docs/_*

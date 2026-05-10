@@ -4,7 +4,6 @@ import json
 import os
 import click
 
-
 # Define the path to the configuration file.
 # The configuration file is used to store persistent configuration settings.
 # These can be overridden by environment variables and command-line optios.

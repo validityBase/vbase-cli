@@ -26,7 +26,7 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx.ext.autodoc",
     "sphinx_markdown_builder",
-    "sphinx_click"
+    "sphinx_click",
 ]
 
 # Hide the Sphinx footer text.
