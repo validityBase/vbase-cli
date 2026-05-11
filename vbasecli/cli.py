@@ -21,7 +21,6 @@ from vbase import (
 
 from vbasecli.config import load_config
 
-
 LOG = get_default_logger(__name__)
 
 
