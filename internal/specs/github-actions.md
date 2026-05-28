@@ -12,14 +12,14 @@
 - Runs on pull requests and pushes to `main` and `dev`.
 - Checks out the repository with the pinned `actions/checkout` action.
 - Logs in to GHCR with `GHCR_PAT`, then runs `ghcr.io/validitybase/commitment-service-localhost:latest`.
-- Installs `requirements.txt` followed by `requirements-dev.txt` with Python 3.11 through `validityBase/vbase-github-actions/.github/actions/setup-python-deps@v1`.
+- Installs the generated development lock `requirements-dev.txt` with Python 3.11 and `require-hashes: "true"` through `validityBase/vbase-github-actions/.github/actions/setup-python-deps@v1`.
 - Runs `python3 -m unittest discover -s tests`.
 - Removes the commitment service container with `if: always()`.
 
 ### `.github/workflows/update-main-docs.yml`
 - Runs on pushes to `main` and manual dispatch.
 - Delegates to `validityBase/vbase-github-actions/.github/workflows/publish-docs.yml@v1`.
-- Installs `docs/requirements.txt` before `requirements.txt` with Python 3.11.
+- Installs the generated documentation lock `docs/requirements.txt` with Python 3.11 and `require-hashes: "true"`.
 - Builds Sphinx Markdown docs into `docs/_build/markdown`.
 - Publishes `docs/_build/markdown` to the `main` branch of the central docs repository.
 - Uses `DOCS_REPO_ACCESS_TOKEN` for the central docs repository.

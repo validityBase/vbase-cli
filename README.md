@@ -10,6 +10,27 @@ vBase Unified Command Line Interface (CLI)
 
 This project is licensed under the Apache 2.0 License - see the [LICENSE.txt](LICENSE.txt) file for details.
 
+## Setup
+
+Install runtime dependencies from the generated hash-locked file:
+
+```bash
+python -m pip install --require-hashes -r requirements.txt
+python -m pip install --no-deps --no-build-isolation -e .
+```
+
+For development:
+
+```bash
+python -m pip install --require-hashes -r requirements-dev.txt
+python -m pip install --no-deps --no-build-isolation -e .
+```
+
+Dependency updates are made in the matching `.in` file and regenerated with
+Python 3.11 using the commands in
+`internal/specs/python-dependency-hashes.md`. Do not edit generated `.txt` lock
+files by hand.
+
 ## Introduction
 
 vBase creates a global auditable record of when data was created, by whom, and how it has changed (collectively, “data provenance”). Data producers can prove the provenance of their data to any external party, increasing its value and marketability. Data consumers can ensure the integrity of historical data and any derivative calculations. The result is trustworthy information that can be put into production quickly without expensive and time-consuming trials.

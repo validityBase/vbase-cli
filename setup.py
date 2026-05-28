@@ -2,16 +2,19 @@
 vBase Unified Command Line Interface (CLI)
 """
 
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
-with open("README.md", encoding="utf-8") as f:
-    long_description = f.read()
+ROOT_DIR = Path(__file__).resolve().parent
 
-with open("requirements.txt", encoding="utf-8") as f:
-    requirements = f.read().splitlines()
+long_description = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
 
-# Filter out Git-based dependencies, as they aren't supported in install_requires.
-requirements = [req for req in requirements if not req.startswith("git+")]
+requirements = [
+    line.strip()
+    for line in (ROOT_DIR / "requirements.in").read_text(encoding="utf-8").splitlines()
+    if line.strip() and not line.strip().startswith("#")
+]
 
 setup(
     name="vbase-cli",
@@ -23,9 +26,6 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/validityBase/vbase-py",
     packages=find_packages(),
-    package_data={
-        "": ["../requirements.txt"],
-    },
     install_requires=requirements,
     classifiers=[
         "Programming Language :: Python :: 3",
