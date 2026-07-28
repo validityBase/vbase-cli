@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    # Dependabot can scan pip-compile layouts when each directory contains both
+    # requirements*.in inputs and requirements*.txt outputs.
+    directories:
+      - "/"
+      - "/docs"
+    schedule:
+      interval: "daily"
+      time: "00:00"
+      timezone: "Etc/UTC"
+    versioning-strategy: "increase-if-necessary"
+    groups:
+      pip-minor-patch-updates:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+        # Supported by Dependabot for multi-directory configs; keeps one PR per
+        # dependency across / and /docs.
+        group-by: "dependency-name"
+      pip-security-updates:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
