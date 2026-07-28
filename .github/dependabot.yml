@@ -19,6 +19,8 @@ updates:
         update-types:
           - "minor"
           - "patch"
+        # Supported by Dependabot for multi-directory configs; keeps one PR per
+        # dependency across / and /docs.
         group-by: "dependency-name"
       pip-security-updates:
         applies-to: "security-updates"

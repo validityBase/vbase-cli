@@ -8,6 +8,13 @@
 
 ## Workflows
 
+## Dependabot
+- Dependabot scans the pip-compile layout in both `/` and `/docs`.
+- The `pip-minor-patch-updates` group intentionally uses
+  `group-by: dependency-name`; GitHub supports this for multi-directory
+  Dependabot configs, and it keeps version-update PRs grouped by dependency
+  across both directories.
+
 ### `.github/workflows/test.yml`
 - Runs on pull requests and pushes to `main` and `dev`.
 - Checks out the repository with the pinned `actions/checkout` action.
