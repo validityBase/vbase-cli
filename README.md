@@ -26,8 +26,8 @@ python -m pip install --require-hashes -r requirements-dev.txt
 python -m pip install --no-deps --no-build-isolation -e .
 ```
 
-See [internal/specs/python-dependency-hashes.md](internal/specs/python-dependency-hashes.md)
-for the dependency layout, lock policy, package metadata rules, and regeneration
+See `internal/specs/python-dependency-hashes.md` in this repository for the
+dependency layout, lock policy, package metadata rules, and regeneration
 commands.
 
 ## Introduction
