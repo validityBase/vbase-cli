@@ -8,13 +8,9 @@
 - Public documentation belongs in `docs/`; internal specs, guides, and agent memory belong in `internal/`.
 
 ## Dependency Locks
-- Human-edited dependency inputs are `requirements.in`, `requirements-dev.in`,
-  `requirements-lock.in`, and `docs/requirements.in`.
-- Generated lock files are `requirements.txt`, `requirements-dev.txt`,
-  `requirements-lock.txt`, and `docs/requirements.txt`; install them with
-  `--require-hashes`.
-- Runtime package metadata is sourced from `requirements.in` via `setup.py`.
-- See [internal/specs/python-dependency-hashes.md](internal/specs/python-dependency-hashes.md).
+- Dependency layout, lock policy, and package metadata rules are canonical in
+  [internal/specs/python-dependency-hashes.md](internal/specs/python-dependency-hashes.md);
+  do not duplicate them here.
 
 ## Internal Documentation
 - GitHub Actions spec: [internal/specs/github-actions.md](internal/specs/github-actions.md)

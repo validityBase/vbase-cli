@@ -26,10 +26,9 @@ python -m pip install --require-hashes -r requirements-dev.txt
 python -m pip install --no-deps --no-build-isolation -e .
 ```
 
-Dependency updates are made in the matching `.in` file and regenerated with
-Python 3.11 using the commands in
-`internal/specs/python-dependency-hashes.md`. Do not edit generated `.txt` lock
-files by hand.
+See [internal/specs/python-dependency-hashes.md](internal/specs/python-dependency-hashes.md)
+for the dependency layout, lock policy, package metadata rules, and regeneration
+commands.
 
 ## Introduction
 

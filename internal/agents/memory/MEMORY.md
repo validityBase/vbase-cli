@@ -9,6 +9,6 @@
 - `test.yml` requires `GHCR_PAT` to pull the localhost commitment service image.
 
 ## Dependency Locks
-- Runtime, development, documentation, and lock-tooling dependency inputs live in `requirements.in`, `requirements-dev.in`, `docs/requirements.in`, and `requirements-lock.in`.
-- Generated lock files are `requirements.txt`, `requirements-dev.txt`, `docs/requirements.txt`, and `requirements-lock.txt`.
-- `setup.py` reads runtime package metadata from `requirements.in`, not from generated hash-locked files.
+- Dependency layout, lock policy, and package metadata rules are canonical in
+  `internal/specs/python-dependency-hashes.md`; keep that as the only detailed
+  copy.
