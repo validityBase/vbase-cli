@@ -7,6 +7,9 @@
 - Documentation publishing delegates to `validityBase/vbase-github-actions/.github/workflows/publish-docs.yml@v1`.
 - Docs publishing installs `docs/requirements.txt` with `require-hashes: true`, builds Sphinx Markdown into `docs/_build/markdown`, and publishes to the `main` branch of the central docs repository.
 - `test.yml` requires `GHCR_PAT` to pull the localhost commitment service image.
+- Repository backups use `.github/workflows/repo-backup.yml`, which delegates
+  to the shared `repo-backup.yml@v1` workflow and resolves generic object
+  storage credentials from the `vbase-repo-backups` Bitwarden project.
 
 ## Dependency Locks
 - Dependency layout, lock policy, and package metadata rules are canonical in
