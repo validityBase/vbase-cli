@@ -13,6 +13,8 @@ updates:
     versioning-strategy: "increase-if-necessary"
     groups:
       pip-version-updates:
+        # Do not set group-by: dependency-name; this group intentionally batches
+        # all version updates instead of opening one PR per dependency.
         applies-to: "version-updates"
         patterns:
           - "*"
