@@ -12,16 +12,12 @@ updates:
       timezone: "Etc/UTC"
     versioning-strategy: "increase-if-necessary"
     groups:
-      pip-minor-patch-updates:
+      pip-version-updates:
+        # Do not set group-by: dependency-name; this group intentionally batches
+        # all version updates instead of opening one PR per dependency.
         applies-to: "version-updates"
         patterns:
           - "*"
-        update-types:
-          - "minor"
-          - "patch"
-        # Supported by Dependabot for multi-directory configs; keeps one PR per
-        # dependency across / and /docs.
-        group-by: "dependency-name"
       pip-security-updates:
         applies-to: "security-updates"
         patterns:
