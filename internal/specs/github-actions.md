@@ -18,7 +18,7 @@
 ### `.github/workflows/test.yml`
 - Runs on pull requests and pushes to `main` and `dev`.
 - Checks out the repository with the pinned `actions/checkout` action.
-- Logs in to GHCR with `GHCR_PAT`, then runs `ghcr.io/validitybase/commitment-service-localhost:latest`.
+- Logs in to GHCR with the workflow `GITHUB_TOKEN` and `packages: read`, then runs `ghcr.io/validitybase/commitment-service-localhost:latest`.
 - Installs the generated development lock `requirements-dev.txt` with Python 3.11 and `require-hashes: "true"` through `validityBase/vbase-github-actions/.github/actions/setup-python-deps@v1`.
 - Runs `python3 -m unittest discover -s tests`.
 - Removes the commitment service container with `if: always()`.
