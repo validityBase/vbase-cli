@@ -1,7 +1,9 @@
+# Generated from validityBase/github-configuration templates.
+# Do not edit rendered files manually; update the source template in validityBase/github-configuration.
 version: 2
 updates:
   - package-ecosystem: "pip"
-    # Dependabot can scan pip-compile layouts when each directory contains both
+    # Dependabot scans pip-compile layouts when each directory contains both
     # requirements*.in inputs and requirements*.txt outputs.
     directories:
       - "/"
@@ -13,8 +15,6 @@ updates:
     versioning-strategy: "increase-if-necessary"
     groups:
       pip-version-updates:
-        # Do not set group-by: dependency-name; this group intentionally batches
-        # all version updates instead of opening one PR per dependency.
         applies-to: "version-updates"
         patterns:
           - "*"
@@ -22,3 +22,8 @@ updates:
         applies-to: "security-updates"
         patterns:
           - "*"
+    ignore:
+      - dependency-name: "pip"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
