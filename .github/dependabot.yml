@@ -1,24 +1,46 @@
-# Generated from validityBase/github-configuration templates.
-# Do not edit rendered files manually; update the source template in validityBase/github-configuration.
+# Generated from validityBase/vbase-github-internal templates.
+# Do not edit rendered files manually; update the source template in validityBase/vbase-github-internal.
 version: 2
 updates:
   - package-ecosystem: "pip"
     # Dependabot scans pip-compile layouts when each directory contains both
     # requirements*.in inputs and requirements*.txt outputs.
-    directories:
-      - "/"
-      - "/docs"
+    directory: "/"
     schedule:
       interval: "daily"
       time: "00:00"
       timezone: "Etc/UTC"
     versioning-strategy: "increase-if-necessary"
     groups:
-      pip-version-updates:
+      pip-root-version-updates:
         applies-to: "version-updates"
         patterns:
           - "*"
-      pip-security-updates:
+      pip-root-security-updates:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: "pip"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+
+  - package-ecosystem: "pip"
+    # Dependabot scans pip-compile layouts when each directory contains both
+    # requirements*.in inputs and requirements*.txt outputs.
+    directory: "/docs"
+    schedule:
+      interval: "daily"
+      time: "00:00"
+      timezone: "Etc/UTC"
+    versioning-strategy: "increase-if-necessary"
+    groups:
+      pip-docs-version-updates:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
+      pip-docs-security-updates:
         applies-to: "security-updates"
         patterns:
           - "*"
