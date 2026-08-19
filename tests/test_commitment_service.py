@@ -121,7 +121,7 @@ class TestCommitmentService(unittest.TestCase):
 
     def setUp(self):
         """Set up a test runner and environment before each test."""
-        self.runner = CliRunner(mix_stderr=True)
+        self.runner = CliRunner()
 
     @parameterized.expand(
         [
