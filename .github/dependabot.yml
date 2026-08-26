@@ -3,8 +3,8 @@
 version: 2
 updates:
   - package-ecosystem: "pip"
-    # Dependabot scans pip-compile layouts when each directory contains both
-    # requirements*.in inputs and requirements*.txt outputs.
+    # Dependabot scans the root pip-compile graph, including requirements files
+    # under /docs, from this single update entry.
     directory: "/"
     schedule:
       interval: "daily"
@@ -12,35 +12,11 @@ updates:
       timezone: "Etc/UTC"
     versioning-strategy: "increase-if-necessary"
     groups:
-      pip-root-version-updates:
+      pip-version-updates:
         applies-to: "version-updates"
         patterns:
           - "*"
-      pip-root-security-updates:
-        applies-to: "security-updates"
-        patterns:
-          - "*"
-    ignore:
-      - dependency-name: "pip"
-        update-types:
-          - "version-update:semver-major"
-          - "version-update:semver-minor"
-
-  - package-ecosystem: "pip"
-    # Dependabot scans pip-compile layouts when each directory contains both
-    # requirements*.in inputs and requirements*.txt outputs.
-    directory: "/docs"
-    schedule:
-      interval: "daily"
-      time: "00:00"
-      timezone: "Etc/UTC"
-    versioning-strategy: "increase-if-necessary"
-    groups:
-      pip-docs-version-updates:
-        applies-to: "version-updates"
-        patterns:
-          - "*"
-      pip-docs-security-updates:
+      pip-security-updates:
         applies-to: "security-updates"
         patterns:
           - "*"
