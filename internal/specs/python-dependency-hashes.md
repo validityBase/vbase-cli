@@ -45,5 +45,5 @@ To change dependencies:
 3. Review the full dependency diff in the PR.
 4. Install with `python -m pip install --require-hashes -r <lock-file>`.
 
-To update lock-generation tooling, update the `pip-tools==...` pin in
-`requirements-lock.in`, then regenerate `requirements-lock.txt`.
+To update lock-generation tooling, update its pins in `requirements-lock.in`,
+then regenerate `requirements-lock.txt`.
