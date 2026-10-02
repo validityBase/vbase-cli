@@ -1,1 +1,3 @@
 pip-tools==7.6.1
+# Click 8.5.0 makes pip-compile emit a spurious --no-index in lock headers.
+click==8.4.2
