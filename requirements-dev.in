@@ -1,8 +1,8 @@
 -r requirements.in
 
-black==26.5.1
+black==26.10.0
 parameterized==0.9.0
 pre-commit==4.6.2
 PyYAML==6.0.3
-pylint==4.0.8
+pylint==4.1.2
 pip-tools==7.6.1
