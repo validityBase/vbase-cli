@@ -8,7 +8,7 @@
 - Docs publishing installs `docs/requirements.txt` with `require-hashes: true`, builds Sphinx Markdown into `docs/_build/markdown`, and publishes to the `main` branch of the central docs repository.
 - `test.yml` uses the workflow `GITHUB_TOKEN` with `packages: read` to pull the localhost commitment service image.
 - Repository backups use `.github/workflows/repo-backup.yml`, which delegates
-  to the shared `repo-backup.yml@v1` workflow and resolves generic object
+  to the shared `repo-backup.yml@v2` workflow and resolves generic object
   storage credentials from the `vbase-repo-backups` Bitwarden project.
 
 ## Dependency Locks
