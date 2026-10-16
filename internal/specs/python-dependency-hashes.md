@@ -47,3 +47,21 @@ To change dependencies:
 
 To update lock-generation tooling, update its pins in `requirements-lock.in`,
 then regenerate `requirements-lock.txt`.
+
+## Security updates to transitive dependencies
+
+Existing lock files preserve resolved versions during ordinary compilation.
+For a vulnerable transitive dependency, use `--upgrade-package 'package==version'`
+with the regeneration command for every lock containing that dependency. Keep
+the normal flags above, including `--generate-hashes` and, for dev/tooling,
+`--allow-unsafe`. Do not add a runtime dependency solely to refresh a lock.
+
+Update runtime dependencies consistently in `requirements.txt`,
+`requirements-dev.txt`, and `docs/requirements.txt`. Update installer/build
+dependencies in both `requirements-lock.txt` and `requirements-dev.txt`; install
+the regenerated tooling lock before compiling the remaining locks.
+
+After the targeted update, rerun the normal regeneration commands without
+`--upgrade-package` and verify that they reproduce the locks. Install with
+`--require-hashes`, run `pip check`, the CLI tests, and the documentation build.
+Confirm that Dependabot closes the alerts after the fix reaches `main`.
