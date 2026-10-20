@@ -15,28 +15,10 @@
 - `pip-version-updates` groups version updates; `pip-security-updates` groups
   security updates. Defining the security group does not enable repository
   Dependabot security updates. An administrator must verify that setting.
-- The observed version-update job selects direct dependencies only. Transitive
-  security fixes therefore require security-update jobs or targeted lock
-  regeneration as described in `python-dependency-hashes.md`.
-- The configuration ignores pip major/minor version updates; this should not
-  be treated as evidence that security updates are enabled or disabled.
-- During the 2026-10-17 investigation, [security PR #19](https://github.com/validityBase/vbase-cli/pull/19)
-  was found closed without merge on 2026-08-19. It proposed Pillow 12.3.0,
-  pip 26.1.2, and setuptools 83.0.0. Five open Pillow alerts still linked to it.
-  Dependabot's closing comment explicitly states that closing this grouped PR
-  did not create ignore rules.
-- [Version-update run 38827504062](https://github.com/validityBase/vbase-cli/actions/runs/38827504062)
-  had `dependency-type: direct`, `security-updates-only: false`, and
-  `update-subdependencies: false`. It updated pre-commit and retained vulnerable
-  transitive pins. Later version-update merges therefore did not replace the
-  unmerged security fixes.
-- Alert #100 offered a manual security-update action; 56 of the 61 open alerts
-  had no associated Dependabot update in GraphQL, and the other five linked to
-  closed PR #19. No update error was reported for those five. The Maintainer
-  account could not read the administrator security setting (REST and settings
-  page returned 404). An administrator must verify security-update enablement
-  and any organization policy before attributing the missing new jobs to a
-  disabled setting. Group configuration alone is not sufficient evidence.
+- Version updates may leave vulnerable transitive dependencies pinned in the
+  generated locks. Use the targeted regeneration procedure in
+  `python-dependency-hashes.md` when security-update jobs do not refresh them.
+- The configuration ignores major and minor version updates for `pip`.
 
 ### `.github/workflows/test.yml`
 - Runs on pull requests and pushes to `main` and `dev`.
