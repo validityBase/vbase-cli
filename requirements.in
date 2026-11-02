@@ -4,4 +4,4 @@ cloup==4.0.0
 greenlet==3.5.6
 pandas==3.1.0
 tzlocal==5.4.5
-vbase==1.0.1
+vbase==2.0.0
