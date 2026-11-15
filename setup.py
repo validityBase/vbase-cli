@@ -19,7 +19,7 @@ requirements = [
 setup(
     name="vbase-cli",
     version="0.0.1",
-    author="PIT Labs, Inc.",
+    author="PIT Labs Inc.",
     author_email="tech@vbase.com",
     description="vBase Unified Command Line Interface (CLI)",
     long_description=long_description,
