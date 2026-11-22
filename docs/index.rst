@@ -3,6 +3,6 @@ vbase-cli Documentation
 ============================
 
 .. click:: vbasecli.cli:cli
-   :prog: vbase-cli
+   :prog: vbase
    :nested: full
 
