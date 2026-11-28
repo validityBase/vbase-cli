@@ -1848,9 +1848,9 @@ snowballstemmer==3.1.0 \
 sphinx==9.0.4 \
     --hash=sha256:594ef59d042972abbc581d8baa577404abe4e6c3b04ef61bd7fc2acbd51f3fa3 \
     --hash=sha256:5bebc595a5e943ea248b99c13814c1c5e10b3ece718976824ffa7959ff95fffb
-sphinx-argparse-cli==1.24.3 \
-    --hash=sha256:12e76777eb9b2d275751bcedf6cef28ab4fc85d9f6fc1fb757cb79e684cf5d2e \
-    --hash=sha256:f84be0334d9a0957272f179370e6023a1b58998cd4623e3de50a528b3b4366e9
+sphinx-argparse-cli==1.24.4 \
+    --hash=sha256:5529ed4b6ecc5ba40b523dbc62bd5b1304060a4840323a1cf37a4f1a113c235c \
+    --hash=sha256:870bdeea59f94b21ff263a695f2427102167fa4e6091fa4c49f08fb2b3d6e509
 sphinx-click==6.2.0 \
     --hash=sha256:1fb1851cb4f2c286d43cbcd57f55db6ef5a8d208bfc3370f19adde232e5803d7 \
     --hash=sha256:fc78b4154a4e5159462e36de55b8643747da6cda86b3b52a8bb62289e603776c
